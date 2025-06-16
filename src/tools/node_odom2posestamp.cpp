@@ -35,7 +35,7 @@ void callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     }
     else
     {
-        if((msg->header.stamp.toSec()-lastMsgTime.toSec())>time_gap)
+        if((rclcpp::Time(msg->header.stamp).seconds()-lastMsgTime.seconds())>time_gap)
         {
             lastMsgTime = msg->header.stamp;
             latest_pose.header.frame_id = "world";

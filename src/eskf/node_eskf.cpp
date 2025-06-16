@@ -37,7 +37,7 @@ bool initialized=false;
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
 {
-  eskf_imu->read_imu_msg(msg->header.stamp.toSec(),
+  eskf_imu->read_imu_msg(rclcpp::Time(msg->header.stamp).seconds(),
                          msg->linear_acceleration.x,
                          msg->linear_acceleration.y,
                          msg->linear_acceleration.z,
@@ -88,7 +88,7 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
     if(!initialized)
     {
       //use the first vo input at the init value
-      eskf_imu->init_from_vo(msg->header.stamp.toSec(),
+      eskf_imu->init_from_vo(rclcpp::Time(msg->header.stamp).seconds(),
                              msg->pose.pose.orientation.w,
                              msg->pose.pose.orientation.x,
                              msg->pose.pose.orientation.y,
@@ -100,7 +100,7 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
     }
     else {//initialzed
       static int count = 0;
-      eskf_imu->read_vo_msg(msg->header.stamp.toSec(),
+      eskf_imu->read_vo_msg(rclcpp::Time(msg->header.stamp).seconds(),
                             msg->pose.pose.orientation.w,
                             msg->pose.pose.orientation.x,
                             msg->pose.pose.orientation.y,
