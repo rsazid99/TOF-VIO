@@ -48,7 +48,7 @@ source install/setup.bash
 ```
 After sourcing the workspace you can launch RViz with:
 ```
-ros2 launch tof_vio rviz.launch
+ros2 launch tof_vio rviz.launch.py
 ```
 ### Verify using Dataset
 Using our recorded rosbag:
@@ -81,16 +81,16 @@ Camera matrix and distortion coeffs of the Depth/NIR image
 | cy            | 87.125724 | p2                | 0       |
 |               |           | p3                | 10.0098 |
 
-Place the .bag file into bag folder then modify the bag.launch file 
+Place the .bag file into bag folder then modify the bag.launch.py file
 ```
 <node pkg="rosbag" type="play" name="rosbag" args="$(find vio)/bag/nameofthebag.bag"/>
 ```
 Run: <br />
 ```
-roslaunch tof_vio rviz.launch
+ros2 launch tof_vio rviz.launch.py
 ```
 ```
-roslaunch tof_vio bag.launch
+ros2 launch tof_vio bag.launch.py
 ```
 
 ### Evaluation 
