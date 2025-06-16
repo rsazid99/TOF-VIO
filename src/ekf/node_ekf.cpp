@@ -111,7 +111,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
     //predict new state
     Vec15 x_dot;
     x_dot = xdot(x_prev, u, n);
-    double dT = (msg_time - last_imu_time).toSec();
+    double dT = (msg_time - last_imu_time).seconds();
     x_new = x_prev + (dT * x_dot);
 
     //Calculate F V
@@ -191,7 +191,7 @@ void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, rclcpp::Time las
             //predict new state
             Vec15 x_dot;
             x_dot = xdot(x_prev, u, n);
-            double dT = (msg.header.stamp - time_prev).toSec();
+            double dT = (msg.header.stamp - time_prev).seconds();
             x_new = x_prev + (dT * x_dot);
 
             //Calculate F V
@@ -302,7 +302,7 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
     }
     for (unsigned int i = 0; i < imu_msg_q.size(); i++)
     {
-        if ((msg->header.stamp - imu_msg_q[i].header.stamp).toSec() > 0.0)
+        if ((msg->header.stamp - imu_msg_q[i].header.stamp).seconds() > 0.0)
             index = i;
         else
             break;
@@ -335,7 +335,7 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
     covariance_new = covariance_prev - K * C * covariance_prev;
     repredict(state_new, covariance_new, msg->header.stamp, index);
     t2 = rclcpp::Clock().now();
-    //    cout << "Cost: " << (t2 - t1).toSec() * 1000 << "ms" << endl;
+    //    cout << "Cost: " << (t2 - t1).seconds() * 1000 << "ms" << endl;
 }
 
 

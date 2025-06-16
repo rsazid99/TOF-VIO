@@ -10,7 +10,7 @@ std::ofstream fd;
 void callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
     fd << setprecision(6)
-         << msg->header.stamp << " "
+         << rclcpp::Time(msg->header.stamp).seconds() << " "
          << setprecision(9)
          << msg->pose.pose.position.x << " "
          << msg->pose.pose.position.y << " "

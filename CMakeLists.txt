@@ -16,6 +16,7 @@ find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(message_filters REQUIRED)
+find_package(pcl_conversions REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
@@ -34,13 +35,13 @@ add_executable(icp_node
   src/vo/icp.cpp
   src/vo/tof_frame.cpp
 )
-ament_target_dependencies(icp_node rclcpp std_msgs sensor_msgs geometry_msgs nav_msgs image_transport cv_bridge PCL OpenCV Eigen3 message_filters tf2 tf2_ros)
+ament_target_dependencies(icp_node rclcpp std_msgs sensor_msgs geometry_msgs nav_msgs image_transport cv_bridge PCL OpenCV Eigen3 message_filters pcl_conversions tf2 tf2_ros)
 
 add_executable(ekf src/ekf/node_ekf.cpp src/ekf/ekf_model.cpp)
-ament_target_dependencies(ekf rclcpp std_msgs sensor_msgs nav_msgs visualization_msgs Eigen3)
+ament_target_dependencies(ekf rclcpp std_msgs sensor_msgs nav_msgs visualization_msgs Eigen3 message_filters)
 
 add_executable(eskf src/eskf/node_eskf.cpp src/eskf/eskf_imu.cpp)
-ament_target_dependencies(eskf rclcpp std_msgs sensor_msgs nav_msgs visualization_msgs Eigen3)
+ament_target_dependencies(eskf rclcpp std_msgs sensor_msgs nav_msgs visualization_msgs Eigen3 message_filters)
 
 add_executable(gt_publisher src/tools/node_gt_publisher.cpp)
 ament_target_dependencies(gt_publisher rclcpp nav_msgs geometry_msgs)
