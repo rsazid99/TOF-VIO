@@ -4,15 +4,15 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/Range.h>
-#include <nav_msgs/Odometry.h>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/range.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <Eigen/Eigen>
 #include <stdio.h>
 #include <math.h>
 #include <deque>
-#include "visualization_msgs/Marker.h"
-#include <std_msgs/Float64MultiArray.h>
+#include <visualization_msgs/msg/marker.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
 
 #include <include/euler_q_rmatrix.h>
 #include <eskf/eskf_imu.h>
@@ -35,7 +35,7 @@ bool initialized=false;
 
 
 
-void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
+void imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr &msg)
 {
   eskf_imu->read_imu_msg(rclcpp::Time(msg->header.stamp).seconds(),
                          msg->linear_acceleration.x,
@@ -55,7 +55,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
   }
   else {//initialzed
     eskf_imu->update_Nominal_Error_Cov();
-    nav_msgs::Odometry eskf_odom;
+    nav_msgs::msg::Odometry eskf_odom;
     eskf_odom.header.stamp = msg->header.stamp;
     eskf_odom.header.frame_id = "world";
     SYS_STATE xt=eskf_imu->states.back();
@@ -76,7 +76,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
 }
 
 
-void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
+void odom_callback_vo(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
 {
   //cout << endl << "in vo callback:" << endl;
   if (msg->pose.pose.position.x == 0.012345)
@@ -111,7 +111,7 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
       eskf_imu->innovate_ErrorState();
       eskf_imu->innovate_Inject_Reset();
       eskf_imu->innovate_reintegrate();
-      nav_msgs::Odometry eskf_odom;
+      nav_msgs::msg::Odometry eskf_odom;
       eskf_odom.header.stamp = msg->header.stamp;
       eskf_odom.header.frame_id = "world";
       SYS_STATE xt=eskf_imu->states.back();

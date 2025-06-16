@@ -2,7 +2,7 @@
 #define ESKF_IMU_H
 
 #include <include/common.h>
-#include <sensor_msgs/Imu.h>
+#include <sensor_msgs/msg/imu.hpp>
 #include <deque>
 
 

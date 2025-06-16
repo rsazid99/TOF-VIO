@@ -4,15 +4,15 @@
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/Range.h>
-#include <nav_msgs/Odometry.h>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/range.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <Eigen/Eigen>
 #include <stdio.h>
 #include <math.h>
 #include <deque>
-#include "visualization_msgs/Marker.h"
-#include <std_msgs/Float64MultiArray.h>
+#include <visualization_msgs/msg/marker.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
 
 #include <include/euler_q_rmatrix.h>
 #include <ekf/ekf_model.h>
@@ -27,7 +27,7 @@ extern Mat12x12 Q;
 extern Mat6x6 R_vo;
 extern deque<MatrixXd> state_q;
 extern deque<MatrixXd> covariance_q;
-extern deque<sensor_msgs::Imu> imu_msg_q;
+extern deque<sensor_msgs::msg::Imu> imu_msg_q;
 
 extern rclcpp::Time last_frame_time;
 extern rclcpp::Time last_imu_time;
@@ -46,7 +46,7 @@ Mat12x12 Q;
 Mat6x6 R_vo;
 deque<MatrixXd> state_q;
 deque<MatrixXd> covariance_q;
-deque<sensor_msgs::Imu> imu_msg_q;
+deque<sensor_msgs::msg::Imu> imu_msg_q;
 
 rclcpp::Time last_frame_time;
 rclcpp::Time last_imu_time;
@@ -58,10 +58,10 @@ Eigen::Quaterniond q_gt;
 Eigen::Vector3d position_gt, velocity_gt;
 
 
-void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
+void imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr &msg)
 {
     //your code for propagation
-    sensor_msgs::Imu drift_msg;
+    sensor_msgs::msg::Imu drift_msg;
     drift_msg = *msg;
     rclcpp::Duration driftT(0,0);
     driftT = rclcpp::Duration::from_seconds(0.0);
@@ -137,8 +137,8 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
         covariance_q.pop_front();
     }
 
-    //publish nav_msgs::Odometry
-    nav_msgs::Odometry ekf_odom;
+    //publish nav_msgs::msg::Odometry
+    nav_msgs::msg::Odometry ekf_odom;
     ekf_odom.header.stamp = msg_time;
     ekf_odom.header.frame_id = "world";
     ekf_odom.pose.pose.position.x = x_new(0);
@@ -175,7 +175,7 @@ void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, rclcpp::Time las
     {
         for (unsigned int i = index + 1; i < imu_msg_q.size(); i++)
         {
-            sensor_msgs::Imu msg = imu_msg_q[i];
+            sensor_msgs::msg::Imu msg = imu_msg_q[i];
             //calculate new state
             //input
             Vec6 u;
@@ -215,7 +215,7 @@ void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, rclcpp::Time las
     }
 }
 
-Vec6 votoz(const nav_msgs::Odometry::ConstPtr &msg)
+Vec6 votoz(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
 {
     Vec6 z;
     Affine3d tf_WI;
@@ -230,7 +230,7 @@ Vec6 votoz(const nav_msgs::Odometry::ConstPtr &msg)
     Matrix3d r_WI = tf_WI.linear();
     Vector3d t_WI = tf_WI.translation();
 
-    nav_msgs::Odometry odom_world;
+    nav_msgs::msg::Odometry odom_world;
     Vector3d p_world;
     Quaterniond q_world;
     p_world = t_WI;
@@ -252,7 +252,7 @@ Vec6 votoz(const nav_msgs::Odometry::ConstPtr &msg)
 }
 
 
-void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
+void odom_callback_vo(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
 {
     rclcpp::Time t1 = rclcpp::Clock().now();
     rclcpp::Time t2;
@@ -285,7 +285,7 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
     Vec15 state_new;
     Mat15x15 covariance_new;
 
-    // sensor_msgs::Imu imu_msg;
+    // sensor_msgs::msg::Imu imu_msg;
     //    cout << "pnp_frame_time:   " << pnp_msg->header.stamp << endl;
     //    cout << "imu_msg_q_size: " << imu_msg_q.size() << endl;
     //    cout << "---q_head_time:   " << imu_msg_q.front().header.stamp << endl;
