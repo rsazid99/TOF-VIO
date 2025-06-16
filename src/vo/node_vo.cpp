@@ -1,12 +1,13 @@
 //ROS
-#include <pluginlib/class_list_macros.h>
-#include <nodelet/nodelet.h>
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/Imu.h>
-#include <std_msgs/Float32MultiArray.h>
-#include <nav_msgs/Odometry.h>
-#include <tf/transform_broadcaster.h>
+#include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <std_msgs/msg/header.hpp>
+#include <std_msgs/msg/float32_multi_array.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
 #include <message_filters/time_synchronizer.h>
@@ -42,7 +43,6 @@
 
 using namespace cv;
 using namespace std;
-using namespace sensor_msgs;
 using namespace Eigen;
 
 
@@ -51,10 +51,14 @@ namespace nodelet_ns
 
 
 
-class NICP : public nodelet::Nodelet
+class NICP : public rclcpp::Node
 {
 public:
-    NICP()  {;}
+    NICP(const rclcpp::NodeOptions & options)
+        : rclcpp::Node("nicp", options)
+    {
+        onInit();
+    }
     ~NICP() {;}
 
 private:
@@ -90,26 +94,26 @@ private:
     double time_sum;
 
     //PUB
-    ros::Publisher pub_cloudin;
-    ros::Publisher pub_keyframe;
-    ros::Publisher pub_sailentpts;
-    ros::Publisher pub_mapcloud;
-    ros::Publisher pub_tf_array;
-    ros::Publisher pub_odom;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_cloudin;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_keyframe;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_sailentpts;
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub_mapcloud;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr pub_tf_array;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom;
     image_transport::Publisher pub_colored_dimg;
 
     //SUB
-    ros::Subscriber mc_sub;
-    ros::Subscriber imu_sub;
-    message_filters::Subscriber<sensor_msgs::PointCloud2> pc_sub;
-    message_filters::Subscriber<sensor_msgs::Image>       grey_sub;
-    message_filters::Subscriber<sensor_msgs::Image>       depth_sub;
-    typedef message_filters::sync_policies::ExactTime<sensor_msgs::PointCloud2, sensor_msgs::Image, sensor_msgs::Image> MyExactSyncPolicy;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr mc_sub;
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub;
+    message_filters::Subscriber<sensor_msgs::msg::PointCloud2> pc_sub;
+    message_filters::Subscriber<sensor_msgs::msg::Image>       grey_sub;
+    message_filters::Subscriber<sensor_msgs::msg::Image>       depth_sub;
+    typedef message_filters::sync_policies::ExactTime<sensor_msgs::msg::PointCloud2, sensor_msgs::msg::Image, sensor_msgs::msg::Image> MyExactSyncPolicy;
     message_filters::Synchronizer<MyExactSyncPolicy> * exactSync_;
 
     virtual void onInit()
     {
-        ros::NodeHandle& node = getPrivateNodeHandle();
+        auto node = this;
 
         string  cam_cal_file_path;
         cv::Mat cameraMatrix, distCoeffs;
@@ -119,25 +123,45 @@ private:
         int     use_depth_grad,use_intensity_grad,use_edge_detector,use_canny;
         float   sh_backfloor, sh_depth, sh_grey, sh_edge;
 
-        node.getParam("icp/target_sailentpts_num",   target_sailentpts_num);
-        node.getParam("icp/use_depth_grad",          use_depth_grad);
-        node.getParam("icp/use_intensity_grad",      use_intensity_grad);
-        node.getParam("icp/use_edge_detector",       use_edge_detector);
-        node.getParam("icp/use_canny",               use_canny);
-        node.getParam("icp/sh_backfloor",            sh_backfloor);
-        node.getParam("icp/sh_depth",                sh_depth);
-        node.getParam("icp/sh_grey",                 sh_grey);
-        node.getParam("icp/sh_edge",                 sh_edge);
-        node.getParam("icp/init_by_IMU",             init_by_IMU);
-        node.getParam("icp/init_by_MC",              init_by_MC);
-        node.getParam("icp/vo_mode",                 vo_mode);
-        node.getParam("icp/kf_criteria",             kf_criteria);
-        node.getParam("icp/use_other_icp",           use_other_icp);
-        node.getParam("icp/use_orig_pts",            use_orig_pts);
-        node.getParam("icp/use_salient_pts",         use_salient_pts);
-        node.getParam("icp/use_ransomdownsample_pts",use_ransomdownsample_pts);
-        node.getParam("icp/use_robust_w",            use_robust_w);
-        node.getParam("cam_cal_file", cam_cal_file_path);
+        this->declare_parameter("icp.target_sailentpts_num", 0);
+        this->declare_parameter("icp.use_depth_grad", 0);
+        this->declare_parameter("icp.use_intensity_grad", 0);
+        this->declare_parameter("icp.use_edge_detector", 0);
+        this->declare_parameter("icp.use_canny", 0);
+        this->declare_parameter("icp.sh_backfloor", 0.0);
+        this->declare_parameter("icp.sh_depth", 0.0);
+        this->declare_parameter("icp.sh_grey", 0.0);
+        this->declare_parameter("icp.sh_edge", 0.0);
+        this->declare_parameter("icp.init_by_IMU", false);
+        this->declare_parameter("icp.init_by_MC", false);
+        this->declare_parameter("icp.vo_mode", false);
+        this->declare_parameter("icp.kf_criteria", 0);
+        this->declare_parameter("icp.use_other_icp", 0);
+        this->declare_parameter("icp.use_orig_pts", false);
+        this->declare_parameter("icp.use_salient_pts", false);
+        this->declare_parameter("icp.use_ransomdownsample_pts", false);
+        this->declare_parameter("icp.use_robust_w", false);
+        this->declare_parameter("cam_cal_file", std::string(""));
+
+        node->get_parameter("icp.target_sailentpts_num",   target_sailentpts_num);
+        node->get_parameter("icp.use_depth_grad",          use_depth_grad);
+        node->get_parameter("icp.use_intensity_grad",      use_intensity_grad);
+        node->get_parameter("icp.use_edge_detector",       use_edge_detector);
+        node->get_parameter("icp.use_canny",               use_canny);
+        node->get_parameter("icp.sh_backfloor",            sh_backfloor);
+        node->get_parameter("icp.sh_depth",                sh_depth);
+        node->get_parameter("icp.sh_grey",                 sh_grey);
+        node->get_parameter("icp.sh_edge",                 sh_edge);
+        node->get_parameter("icp.init_by_IMU",             init_by_IMU);
+        node->get_parameter("icp.init_by_MC",              init_by_MC);
+        node->get_parameter("icp.vo_mode",                 vo_mode);
+        node->get_parameter("icp.kf_criteria",             kf_criteria);
+        node->get_parameter("icp.use_other_icp",           use_other_icp);
+        node->get_parameter("icp.use_orig_pts",            use_orig_pts);
+        node->get_parameter("icp.use_salient_pts",         use_salient_pts);
+        node->get_parameter("icp.use_ransomdownsample_pts",use_ransomdownsample_pts);
+        node->get_parameter("icp.use_robust_w",            use_robust_w);
+        node->get_parameter("cam_cal_file", cam_cal_file_path);
         if(use_other_icp==0)
         {
             int method=0;
@@ -216,37 +240,39 @@ private:
         FrameCount = 0;
 
         //Pub
-        pub_cloudin      = node.advertise<sensor_msgs::PointCloud2>   ("/icp_cloudin", 1);
-        pub_sailentpts   = node.advertise<sensor_msgs::PointCloud2>   ("/icp_sailent_pts", 1);
-        pub_keyframe     = node.advertise<sensor_msgs::PointCloud2>   ("/icp_key_frame", 1);
-        pub_mapcloud     = node.advertise<sensor_msgs::PointCloud2>   ("/map", 1);
-        pub_tf_array     = node.advertise<std_msgs::Float32MultiArray>("/arrayxyz", 1);
-        pub_odom         = node.advertise<nav_msgs::Odometry>         ("/icp_odom", 1);
+        pub_cloudin      = node->create_publisher<sensor_msgs::msg::PointCloud2>("/icp_cloudin", 1);
+        pub_sailentpts   = node->create_publisher<sensor_msgs::msg::PointCloud2>("/icp_sailent_pts", 1);
+        pub_keyframe     = node->create_publisher<sensor_msgs::msg::PointCloud2>("/icp_key_frame", 1);
+        pub_mapcloud     = node->create_publisher<sensor_msgs::msg::PointCloud2>("/map", 1);
+        pub_tf_array     = node->create_publisher<std_msgs::msg::Float32MultiArray>("/arrayxyz", 1);
+        pub_odom         = node->create_publisher<nav_msgs::msg::Odometry>("/icp_odom", 1);
         image_transport::ImageTransport it(node);
         pub_colored_dimg = it.advertise("/colored_dimg", 1);
 
         //Sub
-        mc_sub  = node.subscribe("/input_gt", 1, &NICP::mc_callback, this);
-        imu_sub = node.subscribe("/input_imu", 1, &NICP::imu_callback, this);
+        mc_sub  = node->create_subscription<geometry_msgs::msg::PoseStamped>("/input_gt", 1,
+                        std::bind(&NICP::mc_callback, this, std::placeholders::_1));
+        imu_sub = node->create_subscription<sensor_msgs::msg::Imu>("/input_imu", 1,
+                        std::bind(&NICP::imu_callback, this, std::placeholders::_1));
         //Sync Sub
-        pc_sub.subscribe   (node,   "/input_tof_pc",   2);
-        grey_sub.subscribe (node,   "/input_tof_nir", 2);
-        depth_sub.subscribe(node,   "/input_tof_depth", 2);
+        pc_sub.subscribe   (node.get(),   "/input_tof_pc",   2);
+        grey_sub.subscribe (node.get(),   "/input_tof_nir", 2);
+        depth_sub.subscribe(node.get(),   "/input_tof_depth", 2);
         exactSync_ = new message_filters::Synchronizer<MyExactSyncPolicy>(MyExactSyncPolicy(2), pc_sub, grey_sub,depth_sub);
         exactSync_->registerCallback(boost::bind(&NICP::tof_callback, this, _1, _2, _3));
         cout << "start the thread" << endl;
     }
 
-    void tof_callback(const sensor_msgs::PointCloud2ConstPtr& pcPtr,
-                      const sensor_msgs::ImageConstPtr& mono8Ptr,
-                      const sensor_msgs::ImageConstPtr& depthPtr)
+    void tof_callback(const sensor_msgs::msg::PointCloud2::SharedPtr pcPtr,
+                      const sensor_msgs::msg::Image::SharedPtr mono8Ptr,
+                      const sensor_msgs::msg::Image::SharedPtr depthPtr)
     {
         //tic_toc_ros tt_cb;
         FrameCount++;
         Mat dimg = cv_bridge::toCvCopy(depthPtr,  depthPtr->encoding)->image;
         Mat colored_dimg;
         visualizeDepthImg(colored_dimg,dimg);
-        sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", colored_dimg).toImageMsg();
+        sensor_msgs::msg::Image::SharedPtr msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", colored_dimg).toImageMsg();
         pub_colored_dimg.publish(msg);
         //if(icp_init) findNearestKeyframe();
 
@@ -435,7 +461,7 @@ private:
             }
             else
             {
-                nav_msgs::Odometry odom;
+                nav_msgs::msg::Odometry odom;
                 odom.header.frame_id = "world";
                 odom.header.stamp = pcPtr->header.stamp;
                 odom.pose.pose.position.x = 0.012345; odom.pose.pose.position.y = 0; odom.pose.pose.position.z = 0;
@@ -445,7 +471,7 @@ private:
         }
     }
 
-    void mc_callback(const geometry_msgs::PoseStampedConstPtr& msg)
+    void mc_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
     {
         Eigen::Affine3d T_wi,T_iw;
         Vec3 translation_wi = Vec3(msg->pose.position.x,msg->pose.position.y,msg->pose.position.z);
@@ -465,7 +491,7 @@ private:
         T_cw_init = T_cw_gt_last;
     }
 
-    void imu_callback(const sensor_msgs::ImuConstPtr& msg)
+    void imu_callback(const sensor_msgs::msg::Imu::SharedPtr msg)
     {
         Eigen::Affine3d T_wi,T_iw;
         Eigen::Quaterniond q_WI(msg->orientation.w,msg->orientation.x,msg->orientation.y,msg->orientation.z);
@@ -569,19 +595,25 @@ private:
     void publish_tf(Eigen::Affine3d T_cw)
     {
         Eigen::Affine3d tf_WC = T_cw.inverse();
-        static tf::TransformBroadcaster br;
-        tf::Transform transform;
-        tf::Quaternion tf_q;
+        static tf2_ros::TransformBroadcaster br(this);
+        geometry_msgs::msg::TransformStamped transform;
         Vec3 trans_tmp       = tf_WC.translation();
         Matrix3d rot_tmp     = tf_WC.linear();
         Quaterniond q_tmp(rot_tmp);
-        transform.setOrigin(tf::Vector3(trans_tmp(0),trans_tmp(1),trans_tmp(2)));
-        tf_q.setW(q_tmp.w());  tf_q.setX(q_tmp.x());   tf_q.setY(q_tmp.y());  tf_q.setZ(q_tmp.z());
-        transform.setRotation(tf_q);
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "pico_flexx_optical_frame"));
+        transform.header.stamp = this->get_clock()->now();
+        transform.header.frame_id = "world";
+        transform.child_frame_id = "pico_flexx_optical_frame";
+        transform.transform.translation.x = trans_tmp(0);
+        transform.transform.translation.y = trans_tmp(1);
+        transform.transform.translation.z = trans_tmp(2);
+        transform.transform.rotation.w = q_tmp.w();
+        transform.transform.rotation.x = q_tmp.x();
+        transform.transform.rotation.y = q_tmp.y();
+        transform.transform.rotation.z = q_tmp.z();
+        br.sendTransform(transform);
     }
 
-    void publish_pose(Eigen::Affine3d T_cw, ros::Time pose_stamp)
+    void publish_pose(Eigen::Affine3d T_cw, rclcpp::Time pose_stamp)
     {
         //print the result
         //publish odom
@@ -596,35 +628,41 @@ private:
         //    cout << "Ф:" << std::fixed << euler(0)*57.32 << "  θ:" << euler(1)*57.32 << "  ψ:" << euler(2)*57.32 << " "
         //         << "x:" << translation(0) << "  y:" << translation(1) << "  z:" << translation(2) << endl;
 
-        std_msgs::Float32MultiArray array;
+        std_msgs::msg::Float32MultiArray array;
         array.data.clear();
         array.data.push_back(translation(0)); array.data.push_back(translation(1)); array.data.push_back(translation(2));
         array.data.push_back(euler(0)*57.32); array.data.push_back(euler(1)*57.32); array.data.push_back(euler(2)*57.32);
-        pub_tf_array.publish(array);
+        pub_tf_array->publish(array);
 
-        nav_msgs::Odometry odom;
+        nav_msgs::msg::Odometry odom;
         odom.header.frame_id = "world";
         odom.header.stamp = pose_stamp;
         odom.pose.pose.position.x = translation(0); odom.pose.pose.position.y = translation(1); odom.pose.pose.position.z = translation(2);
         odom.pose.pose.orientation.w = q.w();        odom.pose.pose.orientation.x = q.x();
         odom.pose.pose.orientation.y = q.y();        odom.pose.pose.orientation.z = q.z();
-        pub_odom.publish(odom);
+        pub_odom->publish(odom);
     }
 
-    inline void publishPC(CloudTPtr PCptr, string frame_id, ros::Publisher& pub)
+    inline void publishPC(CloudTPtr PCptr, string frame_id,
+                          rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub)
     {
         sensor_msgs::PointCloud2 output;
         pcl::toROSMsg(*PCptr,output);
         output.header.frame_id=frame_id;
-        pub.publish(output);
+        pub->publish(output);
     }
 
 };//class NICP
 }//namespace nodelet_ns
 
-
-
-PLUGINLIB_EXPORT_CLASS(nodelet_ns::NICP, nodelet::Nodelet)
+int main(int argc, char ** argv)
+{
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<nodelet_ns::NICP>(rclcpp::NodeOptions());
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}
 
 
 
