@@ -264,9 +264,9 @@ public:
         cout << "start the thread" << endl;
     }
 
-    void tof_callback(const sensor_msgs::msg::PointCloud2::SharedPtr pcPtr,
-                      const sensor_msgs::msg::Image::SharedPtr mono8Ptr,
-                      const sensor_msgs::msg::Image::SharedPtr depthPtr)
+    void tof_callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr pcPtr,
+                      const sensor_msgs::msg::Image::ConstSharedPtr mono8Ptr,
+                      const sensor_msgs::msg::Image::ConstSharedPtr depthPtr)
     {
         //tic_toc_ros tt_cb;
         FrameCount++;
