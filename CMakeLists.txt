@@ -4,7 +4,7 @@ project(tof_vio)
 set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS} -O3 -Wall -pthread") # -Wextra -Werror
 set(CMAKE_BUILD_TYPE "RELEASE")
 
-find_package (OpenCV 3 REQUIRED)
+find_package (OpenCV 4 REQUIRED)
 find_package (Eigen3 REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
     nodelet
