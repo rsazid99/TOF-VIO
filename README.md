@@ -9,12 +9,15 @@ alt="cla" width="290" height="184" border="10" /></a>
 ### Relevant publications:
 [Chen, S., Chang, C.-W., & Wen, C.-Y. (2020). Perception in the Dark—Development of a ToF Visual Inertial Odometry System. Sensors, 20(5), 1263. doi: 10.3390/s20051263](https://www.mdpi.com/1424-8220/20/5/1263/pdf)
 ### Introduction: 
-The work is the implement of the filter-based visual inertial odometry using a ToF camera input. The system has the capability to sense in the changing ambient light environment. 
+The work is the implement of the filter-based visual inertial odometry using a ToF camera input. The system has the capability to sense in the changing ambient light environment.
+
+**Note:** Initial efforts have been made to support ROS2 Humble. The codebase still primarily targets ROS1 and further modifications may be required for full compatibility.
 ### Prerequisites
 Ubuntu + ROS <br />
 We have tested in the following environments:<br />
 Ubuntu 16.04 + [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)<br />
-Ubuntu 18.04 + [ROS melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)<br />
+Ubuntu 18.04 + [ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)<br />
+Ubuntu 22.04 + [ROS2 Humble](https://docs.ros.org/en/humble/Installation.html)<br />
 ### Build and Run
 Clone the repository to the catkin work space. E.g. /catkin_ws/src
 ```
@@ -31,6 +34,8 @@ Compile
 cd ~/catkin_ws
 catkin_make
 ```
+
+For ROS2 Humble the package can be built with `colcon build` inside a ROS2 workspace.
 ### Verify using Dataset
 Using our recorded rosbag:
 
