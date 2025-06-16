@@ -11,7 +11,7 @@ alt="cla" width="290" height="184" border="10" /></a>
 ### Introduction: 
 The work is the implement of the filter-based visual inertial odometry using a ToF camera input. The system has the capability to sense in the changing ambient light environment.
 
-**Note:** Initial efforts have been made to support ROS2 Humble. The codebase still primarily targets ROS1 and further modifications may be required for full compatibility.
+**Note:** Initial efforts have been made to support ROS2 Humble. The codebase still primarily targets ROS1 and further modifications may be required for full compatibility. When building with ROS2, remove the `.catkin_workspace` file in the package root so that `colcon` treats it as an ament package.
 ### Prerequisites
 Ubuntu + ROS <br />
 We have tested in the following environments:<br />
