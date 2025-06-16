@@ -18,9 +18,9 @@
 //CV
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 //PCL
-#include <pcl/io/io.h>
+#include <pcl/common/io.h>
 #include <pcl/common/transforms.h>
 #include <pcl/common/transformation_from_correspondences.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -32,6 +32,7 @@
 #include <pcl/features/fpfh.h>
 #include <pcl/registration/ia_ransac.h>
 #include <pcl/registration/ndt.h>
+#include <boost/bind/bind.hpp>
 //USER
 #include <include/common.h>
 #include <include/tic_toc_ros.h>
@@ -57,7 +58,6 @@ public:
     NICP(const rclcpp::NodeOptions & options)
         : rclcpp::Node("nicp", options)
     {
-        onInit();
     }
     ~NICP() {;}
 
@@ -113,7 +113,7 @@ private:
 
     virtual void onInit()
     {
-        auto node = this;
+        auto node = shared_from_this();
 
         string  cam_cal_file_path;
         cv::Mat cameraMatrix, distCoeffs;
@@ -255,11 +255,11 @@ private:
         imu_sub = node->create_subscription<sensor_msgs::msg::Imu>("/input_imu", 1,
                         std::bind(&NICP::imu_callback, this, std::placeholders::_1));
         //Sync Sub
-        pc_sub.subscribe   (node.get(),   "/input_tof_pc",   2);
-        grey_sub.subscribe (node.get(),   "/input_tof_nir", 2);
-        depth_sub.subscribe(node.get(),   "/input_tof_depth", 2);
+        pc_sub.subscribe   (node,   "/input_tof_pc",   2);
+        grey_sub.subscribe (node,   "/input_tof_nir", 2);
+        depth_sub.subscribe(node,   "/input_tof_depth", 2);
         exactSync_ = new message_filters::Synchronizer<MyExactSyncPolicy>(MyExactSyncPolicy(2), pc_sub, grey_sub,depth_sub);
-        exactSync_->registerCallback(boost::bind(&NICP::tof_callback, this, _1, _2, _3));
+        exactSync_->registerCallback(boost::bind(&NICP::tof_callback, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
         cout << "start the thread" << endl;
     }
 
@@ -659,6 +659,7 @@ int main(int argc, char ** argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<nodelet_ns::NICP>(rclcpp::NodeOptions());
+    node->onInit();
     rclcpp::spin(node);
     rclcpp::shutdown();
     return 0;
