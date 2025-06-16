@@ -30,11 +30,10 @@ def generate_launch_description():
     }
 
     icp_node = Node(
-        package='nodelet',
-        executable='nodelet',
-        name='ICP_Node',
+        package='tof_vio',
+        executable='icp_node',
+        name='icp_node',
         output='screen',
-        arguments=['standalone', 'nodelet_ns/NICP'],
         remappings=[
             ('/input_gt', '/gt'),
             ('/input_imu', '/imu'),

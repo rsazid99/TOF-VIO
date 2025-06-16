@@ -50,6 +50,11 @@ After sourcing the workspace you can launch RViz2 with:
 ```
 ros2 launch tof_vio rviz.launch.py
 ```
+On ROS2 the ICP node runs as a regular executable rather than a nodelet. If you
+see errors about the `nodelet` package missing, run the ICP node directly with:
+```
+ros2 run tof_vio icp_node
+```
 ### Verify using Dataset
 Using our recorded rosbag:
 
