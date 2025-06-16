@@ -58,4 +58,10 @@ ament_target_dependencies(vio_broadcaster rclcpp tf2_ros sensor_msgs geometry_ms
 install(TARGETS icp_node ekf eskf gt_publisher topic2file odom2posestamp vio_broadcaster
   DESTINATION lib/${PROJECT_NAME})
 
+install(DIRECTORY
+  launch
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
+
 ament_package()

@@ -35,8 +35,16 @@ Compile
 cd ~/catkin_ws
 catkin_make
 ```
-
-For ROS2 Humble the package can be built with `colcon build` inside a ROS2 workspace.
+For ROS2 Humble the package can be built inside a ROS2 workspace using `colcon build`:
+```
+cd ~/tof_slam
+colcon build
+source install/setup.bash
+```
+After sourcing the workspace you can launch RViz with:
+```
+ros2 launch tof_vio rviz.launch
+```
 ### Verify using Dataset
 Using our recorded rosbag:
 
