@@ -18,6 +18,7 @@ We have tested in the following environments:<br />
 Ubuntu 16.04 + [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)<br />
 Ubuntu 18.04 + [ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)<br />
 Ubuntu 22.04 + [ROS2 Humble](https://docs.ros.org/en/humble/Installation.html)<br />
+OpenCV 4 is required
 ### Build and Run
 Clone the repository to the catkin work space. E.g. /catkin_ws/src
 ```
