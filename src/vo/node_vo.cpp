@@ -111,6 +111,7 @@ private:
     typedef message_filters::sync_policies::ExactTime<sensor_msgs::msg::PointCloud2, sensor_msgs::msg::Image, sensor_msgs::msg::Image> MyExactSyncPolicy;
     message_filters::Synchronizer<MyExactSyncPolicy> * exactSync_;
 
+public:
     virtual void onInit()
     {
         auto node = shared_from_this();
@@ -255,9 +256,9 @@ private:
         imu_sub = node->create_subscription<sensor_msgs::msg::Imu>("/input_imu", 1,
                         std::bind(&NICP::imu_callback, this, std::placeholders::_1));
         //Sync Sub
-        pc_sub.subscribe   (node,   "/input_tof_pc",   2);
-        grey_sub.subscribe (node,   "/input_tof_nir", 2);
-        depth_sub.subscribe(node,   "/input_tof_depth", 2);
+        pc_sub.subscribe(node, "/input_tof_pc");
+        grey_sub.subscribe(node, "/input_tof_nir");
+        depth_sub.subscribe(node, "/input_tof_depth");
         exactSync_ = new message_filters::Synchronizer<MyExactSyncPolicy>(MyExactSyncPolicy(2), pc_sub, grey_sub,depth_sub);
         exactSync_->registerCallback(boost::bind(&NICP::tof_callback, this, boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3));
         cout << "start the thread" << endl;
@@ -646,7 +647,7 @@ private:
     inline void publishPC(CloudTPtr PCptr, string frame_id,
                           rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pub)
     {
-        sensor_msgs::PointCloud2 output;
+        sensor_msgs::msg::PointCloud2 output;
         pcl::toROSMsg(*PCptr,output);
         output.header.frame_id=frame_id;
         pub->publish(output);
