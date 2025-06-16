@@ -50,7 +50,7 @@ def generate_launch_description():
         executable='eskf',
         name='eskf',
         output='screen',
-        remappings=[('~imu', '/imu'), ('~vo', '/icp_odom')],
+        remappings=[('imu', '/imu'), ('vo', '/icp_odom')],
         parameters=[{
             'eskf/ng': 10.0,
             'eskf/na': 10.0,
