@@ -32,7 +32,7 @@ catkin_make
 
 Install ros-pcl
 ```bash
-sudo apt-get install ros-kinetic-pcl-*
+sudo apt-get install ros-humble-pcl-*
 sudo apt-get install ros-melodic-pcl-*
 ```
 
@@ -50,18 +50,7 @@ After sourcing the workspace you can launch RViz2 with:
 ```
 ros2 launch tof_vio rviz.launch.py
 ```
-On ROS2 the ICP node runs as a regular executable rather than a nodelet. If you
-see errors about the `nodelet` package missing, run the ICP node directly with:
 ```
-ros2 run tof_vio icp_node
-```
-When started this way the node does not load any of the parameters that are
-normally set by the launch files. At least one of `icp.use_orig_pts`,
-`icp.use_salient_pts` or `icp.use_ransomdownsample_pts` must be enabled or the
-node will exit with `error: please check the launch file`. Either supply the
-parameters manually with `--ros-args` or use a launch file such as
-`vio.launch.py`:
-```bash
 ros2 launch tof_vio vio.launch.py
 ```
 ### Verify using Dataset
