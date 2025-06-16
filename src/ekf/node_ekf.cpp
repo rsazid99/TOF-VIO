@@ -154,7 +154,7 @@ void imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr &msg)
     ekf_odom.pose.pose.orientation.x = odom_q.x();
     ekf_odom.pose.pose.orientation.y = odom_q.y();
     ekf_odom.pose.pose.orientation.z = odom_q.z();
-    odom_pub.publish(ekf_odom);
+    odom_pub->publish(ekf_odom);
 }
 
 //error state injection
@@ -191,7 +191,8 @@ void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, rclcpp::Time las
             //predict new state
             Vec15 x_dot;
             x_dot = xdot(x_prev, u, n);
-            double dT = (msg.header.stamp - time_prev).seconds();
+            rclcpp::Time msg_time(msg.header.stamp);
+            double dT = (msg_time - time_prev).seconds();
             x_new = x_prev + (dT * x_dot);
 
             //Calculate F V
@@ -209,7 +210,7 @@ void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, rclcpp::Time las
             cov_prev = cov_new;
             state_q[i] = x_new;
             covariance_q[i] = cov_new;
-            time_prev = imu_msg_q[i].header.stamp;
+            time_prev = rclcpp::Time(imu_msg_q[i].header.stamp);
             repredict_count++;
         }
     }
@@ -219,8 +220,8 @@ Vec6 votoz(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
 {
     Vec6 z;
     Affine3d tf_WI;
-    geometry_msgs::Quaternion q = msg->pose.pose.orientation;
-    geometry_msgs::Point t = msg->pose.pose.position;
+    geometry_msgs::msg::Quaternion q = msg->pose.pose.orientation;
+    geometry_msgs::msg::Point t = msg->pose.pose.position;
     /* Tag to camera */
     tf_WI.setIdentity();
     tf_WI.translation() = Vector3d(t.x, t.y, t.z);
@@ -244,7 +245,7 @@ Vec6 votoz(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
     odom_world.pose.pose.orientation.x = q_world.x();
     odom_world.pose.pose.orientation.y = q_world.y();
     odom_world.pose.pose.orientation.z = q_world.z();
-    pub_odom_world.publish(odom_world);
+    pub_odom_world->publish(odom_world);
 
     Vector3d euler = euler_from_rotation_matrix(r_WI);
     z << t_WI(0), t_WI(1), t_WI(2), euler(1), euler(1), euler(2);
@@ -271,12 +272,12 @@ void odom_callback_vo(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
         x_init.setZero();
         x_init.head(6) = z_vo;                      //init the state
         cov_init = 0.1 * MatrixXd::Identity(15, 15); //init the cov
-        last_frame_time = msg->header.stamp;
+        last_frame_time = rclcpp::Time(msg->header.stamp);
         state_q.push_back(x_init);
         covariance_q.push_back(cov_init);
         initialized = 1;
         cout << x_init << endl;
-        cout << "the init state is using vo at:" << msg->header.stamp << endl;
+        cout << "the init state is using vo at:" << rclcpp::Time(msg->header.stamp).seconds() << endl;
         return;
     }
 
@@ -295,14 +296,14 @@ void odom_callback_vo(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
         return;
 
     //cout << (imu_msg_q.front().header.stamp - pnp_msg->header.stamp) << endl;
-    if (imu_msg_q.front().header.stamp > msg->header.stamp)
+    if (rclcpp::Time(imu_msg_q.front().header.stamp) > rclcpp::Time(msg->header.stamp))
     {
         cout << "break for time synce" << endl;
         return;
     }
     for (unsigned int i = 0; i < imu_msg_q.size(); i++)
     {
-        if ((msg->header.stamp - imu_msg_q[i].header.stamp).seconds() > 0.0)
+        if ((rclcpp::Time(msg->header.stamp) - rclcpp::Time(imu_msg_q[i].header.stamp)).seconds() > 0.0)
             index = i;
         else
             break;
@@ -333,7 +334,7 @@ void odom_callback_vo(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
     K = covariance_prev * C.transpose() * ((C * covariance_prev * C.transpose() + W * R_vo * W.transpose()).inverse());
     state_new = state_prev + K * (zvo_g);
     covariance_new = covariance_prev - K * C * covariance_prev;
-    repredict(state_new, covariance_new, msg->header.stamp, index);
+    repredict(state_new, covariance_new, rclcpp::Time(msg->header.stamp), index);
     t2 = rclcpp::Clock().now();
     //    cout << "Cost: " << (t2 - t1).seconds() * 1000 << "ms" << endl;
 }
