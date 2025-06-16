@@ -2,9 +2,9 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <sensor_msgs/Imu.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <sensor_msgs/msg/imu.hpp>
 #include <iomanip>
 #include <iostream>
 
@@ -12,7 +12,7 @@ using namespace std;
 long seq = 0;
 rclcpp::Time last_update;
 
-geometry_msgs::PoseStamped imu_pose;
+geometry_msgs::msg::PoseStamped imu_pose;
 rclcpp::Time t_pose;
 
 void imuposeCallback(const sensor_msgs::msg::Imu::SharedPtr msg){
@@ -39,7 +39,7 @@ int main(int argc, char** argv){
 
   while (rclcpp::ok())
   {
-    geometry_msgs::TransformStamped transformStamped_world_sensors_link;
+    geometry_msgs::msg::TransformStamped transformStamped_world_sensors_link;
     transformStamped_world_sensors_link.header.stamp = node->get_clock()->now();
     transformStamped_world_sensors_link.header.frame_id = "world";
     transformStamped_world_sensors_link.child_frame_id = "imu_link";

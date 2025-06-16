@@ -23,7 +23,7 @@ void TOF_Frame::clear()
 }
 
 
-void TOF_Frame::read_PC_Iimg_FromROSMsg(const sensor_msgs::PointCloud2ConstPtr &pcPtr, const sensor_msgs::ImageConstPtr &mono8Ptr)
+void TOF_Frame::read_PC_Iimg_FromROSMsg(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &pcPtr, const sensor_msgs::msg::Image::ConstSharedPtr &mono8Ptr)
 {
   cv_bridge::CvImagePtr cvbridge_image  = cv_bridge::toCvCopy(mono8Ptr,  mono8Ptr->encoding);
   Mat img=cvbridge_image->image;
