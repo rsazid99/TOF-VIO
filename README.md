@@ -46,7 +46,7 @@ cd ..
 colcon build
 source install/setup.bash
 ```
-After sourcing the workspace you can launch RViz with:
+After sourcing the workspace you can launch RViz2 with:
 ```
 ros2 launch tof_vio rviz.launch.py
 ```
