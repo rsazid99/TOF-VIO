@@ -34,9 +34,9 @@ def generate_launch_description():
     ]
 
     realsense_include = IncludeLaunchDescription(
-        AnyLaunchDescriptionSource(
+        PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory('realsense2_camera'),
-                         'launch/includes/nodelet.launch.xml')
+                         'launch', 'rs_launch.py')
         ),
         launch_arguments={
             'tf_prefix': LaunchConfiguration('tf_prefix'),
