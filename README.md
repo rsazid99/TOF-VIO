@@ -20,24 +20,29 @@ Ubuntu 18.04 + [ROS Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)<br
 Ubuntu 22.04 + [ROS2 Humble](https://docs.ros.org/en/humble/Installation.html)<br />
 OpenCV 4 is required
 ### Build and Run
-Clone the repository to the catkin work space. E.g. /catkin_ws/src
-```
+Clone the repository into your ROS workspace's `src` directory.
+
+**ROS1 (catkin) example**
+```bash
 cd ~/catkin_ws/src
-git clone https://github.com/HKPolyU-UAV/TOF-VIO.git
-```
-Install ros-pcl
-```
-sudo apt-get install ros-kinetic-pcl-*
-sudo apt-get install ros-melodic-pcl-*
-```
-Compile
-```
+ git clone https://github.com/HKPolyU-UAV/TOF-VIO.git
 cd ~/catkin_ws
 catkin_make
 ```
-For ROS2 Humble the package can be built inside a ROS2 workspace using `colcon build`:
+
+Install ros-pcl
+```bash
+sudo apt-get install ros-kinetic-pcl-*
+sudo apt-get install ros-melodic-pcl-*
 ```
-cd ~/tof_slam
+
+**ROS2 Humble example**
+```bash
+cd ~/tof_slam/src
+git clone https://github.com/HKPolyU-UAV/TOF-VIO.git
+# Remove .catkin_workspace if present
+rm -f .catkin_workspace
+cd ..
 colcon build
 source install/setup.bash
 ```
