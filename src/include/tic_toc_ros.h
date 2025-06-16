@@ -1,7 +1,7 @@
 #ifndef TIC_TOC_H
 #define TIC_TOC_H
 
-#include "ros/time.h"
+#include <rclcpp/rclcpp.hpp>
 
 
 //usage:
@@ -13,26 +13,35 @@
 class tic_toc_ros
 {
 public:
-    tic_toc_ros(void) {
-        tic=ros::Time::now();
-    }
-    double dT_s(void){
-        return (ros::Time::now()-tic).toSec();
-    }
-    double dT_ms(void){
-        return (ros::Time::now()-tic).toSec()*1000;
-    }
-    void toc(void)
+    tic_toc_ros()
+        : clock_(RCL_ROS_TIME)
     {
-        std::cout << (ros::Time::now()-tic).toSec()*1000 <<"ms" << std::endl;
+        tic = clock_.now();
     }
+
+    double dT_s()
+    {
+        return (clock_.now() - tic).seconds();
+    }
+
+    double dT_ms()
+    {
+        return (clock_.now() - tic).seconds() * 1000.0;
+    }
+
+    void toc()
+    {
+        std::cout << (clock_.now() - tic).seconds() * 1000.0 << "ms" << std::endl;
+    }
+
     void toc(std::string str)
     {
-        std::cout << str << " time:" <<(ros::Time::now()-tic).toSec()*1000 <<"ms" << std::endl;
+        std::cout << str << " time:" << (clock_.now() - tic).seconds() * 1000.0 << "ms" << std::endl;
     }
+
 private:
-    ros::Time tic;
-//    ros::Time toc;
+    rclcpp::Clock clock_;
+    rclcpp::Time tic;
 };
 
 

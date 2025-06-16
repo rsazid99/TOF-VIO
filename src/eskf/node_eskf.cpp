@@ -1,6 +1,5 @@
 #include <iostream>
-#include <ros/ros.h>
-#include <ros/console.h>
+#include <rclcpp/rclcpp.hpp>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/synchronizer.h>
@@ -26,11 +25,11 @@ using namespace Eigen;
 
 
 extern ESKF_IMU *eskf_imu;
-extern ros::Publisher odom_pub;
+extern rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
 extern bool initialized;
 
 ESKF_IMU *eskf_imu;
-ros::Publisher odom_pub;
+rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
 bool initialized=false;
 
 
@@ -138,23 +137,29 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "eskf_node");
-  ros::NodeHandle n("~");
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node::make_shared("eskf_node");
 
 
-  odom_pub = n.advertise<nav_msgs::Odometry>("eskf_odom", 10);
+  odom_pub = node->create_publisher<nav_msgs::msg::Odometry>("eskf_odom", 10);
 
   // You should also tune these parameters
   double ng, na, nbg, nba, n_vo_p, n_vo_q, vo_delay;
   // Q imu covariance matrix;
-  n.getParam("eskf/ng", ng);
-  n.getParam("eskf/na", na);
-  n.getParam("eskf/nbg", nbg);
-  n.getParam("eskf/nba", nba);
-  /* pnp position and orientation noise */
-  n.getParam("eskf/vo_p", n_vo_p);
-  n.getParam("eskf/vo_q", n_vo_q);
-  n.getParam("eskf/vo_delay_ms", vo_delay);
+  node->declare_parameter("eskf.ng", 0.0);
+  node->declare_parameter("eskf.na", 0.0);
+  node->declare_parameter("eskf.nbg", 0.0);
+  node->declare_parameter("eskf.nba", 0.0);
+  node->declare_parameter("eskf.vo_p", 0.0);
+  node->declare_parameter("eskf.vo_q", 0.0);
+  node->declare_parameter("eskf.vo_delay_ms", 0.0);
+  node->get_parameter("eskf.ng", ng);
+  node->get_parameter("eskf.na", na);
+  node->get_parameter("eskf.nbg", nbg);
+  node->get_parameter("eskf.nba", nba);
+  node->get_parameter("eskf.vo_p", n_vo_p);
+  node->get_parameter("eskf.vo_q", n_vo_q);
+  node->get_parameter("eskf.vo_delay_ms", vo_delay);
   /* optical flow noise */
 
   cout << "ng     :" << ng << endl;
@@ -172,9 +177,10 @@ int main(int argc, char **argv)
                           n_vo_q,
                           vo_delay);
 
-  ros::Subscriber s1 = n.subscribe("imu", 30, imu_callback);
-  ros::Subscriber s2 = n.subscribe("vo", 1, odom_callback_vo);
+  auto s1 = node->create_subscription<sensor_msgs::msg::Imu>("imu", 30, imu_callback);
+  auto s2 = node->create_subscription<nav_msgs::msg::Odometry>("vo", 1, odom_callback_vo);
 
 
-  ros::spin();
+  rclcpp::spin(node);
+  rclcpp::shutdown();
 }

@@ -1,24 +1,22 @@
-#include "ros/ros.h"
-#include "std_msgs/String.h"
-#include "geometry_msgs/TransformStamped.h"
-#include "geometry_msgs/PoseStamped.h"
-#include "nav_msgs/Odometry.h"
+#include <rclcpp/rclcpp.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <nav_msgs/msg/odometry.hpp>
 #include <fstream>
 
 using namespace  std;
 
-geometry_msgs::PoseStamped latest_pose;
+geometry_msgs::msg::PoseStamped latest_pose;
 bool first_msg=1;
-ros::Time lastMsgTime;
+rclcpp::Time lastMsgTime;
 double time_gap=0.1;
 string odom_topic_in;
 string pose_topic_out;
 int frequency=10;
 
-ros::Publisher pose_pub;
+rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub;
 
 //Call Back Function of motion captrure system
-void callback(const nav_msgs::OdometryConstPtr& msg)
+void callback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
     if(first_msg)
     {
@@ -32,7 +30,7 @@ void callback(const nav_msgs::OdometryConstPtr& msg)
         latest_pose.pose.position.x = msg->pose.pose.position.x;
         latest_pose.pose.position.y = msg->pose.pose.position.y;
         latest_pose.pose.position.z = msg->pose.pose.position.z;
-        pose_pub.publish(latest_pose);
+        pose_pub->publish(latest_pose);
         first_msg = false;
     }
     else
@@ -49,7 +47,7 @@ void callback(const nav_msgs::OdometryConstPtr& msg)
             latest_pose.pose.position.x = msg->pose.pose.position.x;
             latest_pose.pose.position.y = msg->pose.pose.position.y;
             latest_pose.pose.position.z = msg->pose.pose.position.z;
-            pose_pub.publish(latest_pose);
+            pose_pub->publish(latest_pose);
         }
     }
     return;
@@ -57,16 +55,19 @@ void callback(const nav_msgs::OdometryConstPtr& msg)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "odom2posestamp");
-    ros::NodeHandle n("~");
+    rclcpp::init(argc, argv);
+    auto node = rclcpp::Node::make_shared("odom2posestamp");
 
+    node->declare_parameter("odom_in", "odom");
+    node->declare_parameter("pose_out", "pose");
+    node->get_parameter("odom_in", odom_topic_in);
+    node->get_parameter("pose_out", pose_topic_out);
 
-    n.getParam("odom_in", odom_topic_in);
-    n.getParam("pose_out", pose_topic_out);
-
-    ros::Subscriber sub = n.subscribe(odom_topic_in, 2, callback);
-    pose_pub = n.advertise<geometry_msgs::PoseStamped>(pose_topic_out, 2);
-    ros::spin();
+    auto sub = node->create_subscription<nav_msgs::msg::Odometry>(
+        odom_topic_in, 2, callback);
+    pose_pub = node->create_publisher<geometry_msgs::msg::PoseStamped>(pose_topic_out, 2);
+    rclcpp::spin(node);
+    rclcpp::shutdown();
 
     return 0;
 }

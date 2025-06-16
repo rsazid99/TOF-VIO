@@ -1,5 +1,4 @@
-#include <ros/ros.h>
-#include <ros/time.h>
+#include <rclcpp/rclcpp.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
@@ -11,12 +10,12 @@
 
 using namespace std;
 long seq = 0;
-ros::Time last_update;
+rclcpp::Time last_update;
 
 geometry_msgs::PoseStamped imu_pose;
-static ros::Time t_pose;
+rclcpp::Time t_pose;
 
-void imuposeCallback(const sensor_msgs::ImuConstPtr& msg){
+void imuposeCallback(const sensor_msgs::msg::Imu::SharedPtr msg){
   imu_pose.pose.orientation.x = msg->orientation.x;
   imu_pose.pose.orientation.y = msg->orientation.y;
   imu_pose.pose.orientation.z = msg->orientation.z;
@@ -26,11 +25,11 @@ void imuposeCallback(const sensor_msgs::ImuConstPtr& msg){
 
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "vio_broadcaster");
-  ros::NodeHandle node;
+  rclcpp::init(argc, argv);
+  auto node = rclcpp::Node::make_shared("vio_broadcaster");
 
-  ros::Rate loop_rate(100);
-  ros::Subscriber sub = node.subscribe("/mavros/imu/data", 10, &imuposeCallback);
+  rclcpp::Rate loop_rate(100);
+  auto sub = node->create_subscription<sensor_msgs::msg::Imu>("/mavros/imu/data", 10, imuposeCallback);
 
   tf2_ros::TransformBroadcaster br_world_sensors_link;
   imu_pose.pose.orientation.x = 0;
@@ -38,10 +37,10 @@ int main(int argc, char** argv){
   imu_pose.pose.orientation.z = 0;
   imu_pose.pose.orientation.w = 1;
 
-  while (ros::ok())
+  while (rclcpp::ok())
   {
     geometry_msgs::TransformStamped transformStamped_world_sensors_link;
-    transformStamped_world_sensors_link.header.stamp = ros::Time::now();
+    transformStamped_world_sensors_link.header.stamp = node->get_clock()->now();
     transformStamped_world_sensors_link.header.frame_id = "world";
     transformStamped_world_sensors_link.child_frame_id = "imu_link";
     transformStamped_world_sensors_link.transform.translation.x = 0.0;
@@ -54,8 +53,9 @@ int main(int argc, char** argv){
     transformStamped_world_sensors_link.transform.rotation.w = imu_pose.pose.orientation.w;
     br_world_sensors_link.sendTransform(transformStamped_world_sensors_link);
 
-    ros::spinOnce();
+    rclcpp::spin_some(node);
     loop_rate.sleep();
   }
+  rclcpp::shutdown();
   return 0;
 };

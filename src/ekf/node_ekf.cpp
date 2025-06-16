@@ -1,6 +1,5 @@
 #include <iostream>
-#include <ros/ros.h>
-#include <ros/console.h>
+#include <rclcpp/rclcpp.hpp>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
 #include <message_filters/synchronizer.h>
@@ -21,40 +20,40 @@
 using namespace std;
 using namespace Eigen;
 
-extern ros::Publisher odom_pub;
-extern ros::Publisher pub_odom_world;
-extern ros::Publisher pub_array;
+extern rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
+extern rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_world;
+extern rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr pub_array;
 extern Mat12x12 Q;
 extern Mat6x6 R_vo;
 extern deque<MatrixXd> state_q;
 extern deque<MatrixXd> covariance_q;
 extern deque<sensor_msgs::Imu> imu_msg_q;
 
-extern ros::Time last_frame_time;
-extern ros::Time last_imu_time;
+extern rclcpp::Time last_frame_time;
+extern rclcpp::Time last_imu_time;
 extern int initialized;
 extern int got_first_imu;
 
-extern ros::Publisher pub_vel;
+extern rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_vel;
 extern Eigen::Quaterniond q_gt;
 extern Eigen::Vector3d position_gt, velocity_gt;
 
 
-ros::Publisher odom_pub;
-ros::Publisher pub_odom_world;
-ros::Publisher pub_array;
+rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub;
+rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pub_odom_world;
+rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr pub_array;
 Mat12x12 Q;
 Mat6x6 R_vo;
 deque<MatrixXd> state_q;
 deque<MatrixXd> covariance_q;
 deque<sensor_msgs::Imu> imu_msg_q;
 
-ros::Time last_frame_time;
-ros::Time last_imu_time;
+rclcpp::Time last_frame_time;
+rclcpp::Time last_imu_time;
 int initialized = 0;
 int got_first_imu = 0;
 
-ros::Publisher pub_vel;
+rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pub_vel;
 Eigen::Quaterniond q_gt;
 Eigen::Vector3d position_gt, velocity_gt;
 
@@ -64,9 +63,9 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
     //your code for propagation
     sensor_msgs::Imu drift_msg;
     drift_msg = *msg;
-    ros::Duration driftT;
-    driftT.fromSec(0.0);
-    ros::Time msg_time = msg->header.stamp;
+    rclcpp::Duration driftT(0,0);
+    driftT = rclcpp::Duration::from_seconds(0.0);
+    rclcpp::Time msg_time = msg->header.stamp;
     msg_time=msg_time-driftT;
     drift_msg.header.stamp=msg_time;
     //    cout << "orig msg time " <<msg->header.stamp << endl;
@@ -159,7 +158,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr &msg)
 }
 
 //error state injection
-void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, ros::Time last_frame_time, unsigned int index)
+void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, rclcpp::Time last_frame_time, unsigned int index)
 {
     Vec15 x_new;
     Mat15x15 cov_new;
@@ -168,7 +167,7 @@ void repredict(MatrixXd mil_camera, MatrixXd covariance_camera, ros::Time last_f
 
     x_prev = mil_camera;
     cov_prev = covariance_camera;
-    ros::Time time_prev = last_frame_time;
+    rclcpp::Time time_prev = last_frame_time;
 
     int repredict_count = 0;
     //check whether need to update
@@ -255,8 +254,8 @@ Vec6 votoz(const nav_msgs::Odometry::ConstPtr &msg)
 
 void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
 {
-    ros::Time t1, t2;
-    t1 = ros::Time::now();
+    rclcpp::Time t1 = rclcpp::Clock().now();
+    rclcpp::Time t2;
     if (msg->pose.pose.position.x == 0.012345)
     {
         return;
@@ -335,7 +334,7 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
     state_new = state_prev + K * (zvo_g);
     covariance_new = covariance_prev - K * C * covariance_prev;
     repredict(state_new, covariance_new, msg->header.stamp, index);
-    t2 = ros::Time::now();
+    t2 = rclcpp::Clock().now();
     //    cout << "Cost: " << (t2 - t1).toSec() * 1000 << "ms" << endl;
 }
 
@@ -346,26 +345,31 @@ void odom_callback_vo(const nav_msgs::Odometry::ConstPtr &msg)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "ekf");
-    ros::NodeHandle n("~");
-    ros::Subscriber s1 = n.subscribe("imu", 20, imu_callback);
-    ros::Subscriber s2 = n.subscribe("vo", 1, odom_callback_vo);
+    rclcpp::init(argc, argv);
+    auto node = rclcpp::Node::make_shared("ekf");
+    auto s1 = node->create_subscription<sensor_msgs::msg::Imu>("imu", 20, imu_callback);
+    auto s2 = node->create_subscription<nav_msgs::msg::Odometry>("vo", 1, odom_callback_vo);
 
-    pub_vel = n.advertise<visualization_msgs::Marker>("/ekf_sub/velocity", 1, true);
-    odom_pub = n.advertise<nav_msgs::Odometry>("ekf_odom", 10);
-    pub_odom_world = n.advertise<nav_msgs::Odometry>("pnp_odom_world", 10);
-    pub_array = n.advertise<std_msgs::Float64MultiArray>("plotpqv", 10);
+    pub_vel = node->create_publisher<visualization_msgs::msg::Marker>("/ekf_sub/velocity", 1);
+    odom_pub = node->create_publisher<nav_msgs::msg::Odometry>("ekf_odom", 10);
+    pub_odom_world = node->create_publisher<nav_msgs::msg::Odometry>("pnp_odom_world", 10);
+    pub_array = node->create_publisher<std_msgs::msg::Float64MultiArray>("plotpqv", 10);
 
     // You should also tune these parameters
     double ng, na, nbg, nba, n_vo_p, n_vo_q;
     // Q imu covariance matrix;
-    n.getParam("ekf/ng", ng);
-    n.getParam("ekf/na", na);
-    n.getParam("ekf/nbg", nbg);
-    n.getParam("ekf/nba", nba);
-    /* pnp position and orientation noise */
-    n.getParam("ekf/vo_p", n_vo_p);
-    n.getParam("ekf/vo_q", n_vo_q);
+    node->declare_parameter("ekf.ng", 0.0);
+    node->declare_parameter("ekf.na", 0.0);
+    node->declare_parameter("ekf.nbg", 0.0);
+    node->declare_parameter("ekf.nba", 0.0);
+    node->declare_parameter("ekf.vo_p", 0.0);
+    node->declare_parameter("ekf.vo_q", 0.0);
+    node->get_parameter("ekf.ng", ng);
+    node->get_parameter("ekf.na", na);
+    node->get_parameter("ekf.nbg", nbg);
+    node->get_parameter("ekf.nba", nba);
+    node->get_parameter("ekf.vo_p", n_vo_p);
+    node->get_parameter("ekf.vo_q", n_vo_q);
     /* optical flow noise */
 
     cout << "ng     :" << ng << endl;
@@ -394,5 +398,6 @@ int main(int argc, char **argv)
     cout << "R_vo:" << endl
          << R_vo << endl;
 
-    ros::spin();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
 }
