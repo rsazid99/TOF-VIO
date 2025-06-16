@@ -70,7 +70,7 @@ void imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr &msg)
     eskf_odom.pose.pose.orientation.x = xt.n_state[1];
     eskf_odom.pose.pose.orientation.y = xt.n_state[2];
     eskf_odom.pose.pose.orientation.z = xt.n_state[3];
-    odom_pub.publish(eskf_odom);
+    odom_pub->publish(eskf_odom);
     //cout << "imu update process" << endl;
   }
 }
@@ -126,7 +126,7 @@ void odom_callback_vo(const nav_msgs::msg::Odometry::ConstSharedPtr &msg)
       eskf_odom.pose.pose.orientation.x = xt.n_state[1];
       eskf_odom.pose.pose.orientation.y = xt.n_state[2];
       eskf_odom.pose.pose.orientation.z = xt.n_state[3];
-      odom_pub.publish(eskf_odom);
+      odom_pub->publish(eskf_odom);
       count++;
     }
   }

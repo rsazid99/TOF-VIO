@@ -79,7 +79,7 @@ void imu_callback(const sensor_msgs::msg::Imu::ConstSharedPtr &msg)
     if (!got_first_imu)
     {
         cout << "inited and got imu data" << endl
-             << "at time :" << msg_time << endl
+             << "at time :" << msg_time.seconds() << endl
              << endl
              << endl;
         imu_msg_q.push_back(*msg);
