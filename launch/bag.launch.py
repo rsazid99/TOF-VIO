@@ -28,7 +28,7 @@ def generate_launch_description():
         executable='topic2file',
         name='odomfile',
         output='log',
-        remappings=[('~odom', '/icp_odom')],
+        remappings=[('odom', '/icp_odom')],
         parameters=[{'filepath': os.path.join(pkg_share, 'result', 'icp+text.txt')}]
     )
 
@@ -37,7 +37,7 @@ def generate_launch_description():
         executable='topic2file',
         name='gtfile',
         output='log',
-        remappings=[('~odom', '/gt/odom_gt')],
+        remappings=[('odom', '/gt/odom_gt')],
         parameters=[{'filepath': os.path.join(pkg_share, 'result', 'gt.txt')}]
     )
 
